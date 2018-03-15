@@ -13,18 +13,26 @@ import android.support.annotation.StringDef;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.app.NotificationCompat;
+import android.text.Layout;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.GridLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 
@@ -35,12 +43,15 @@ public class MainActivity extends AppCompatActivity {
     MediaPlayer cancion = null;
     SeekBar duracion;
     SeekBar volumen;
+    EditText letra;
     Handler handler;
     Runnable runnable;
     ListView lista;
+    RelativeLayout layoutletra;
     GridLayout grid_lista;
     ArrayList listacanciones = new ArrayList();
     ArrayList array = new ArrayList();
+    ArrayList array_letras = new ArrayList();
     TextView textView_nombre;
     AudioManager audioManager;
     boolean pausaactiva = true;
@@ -59,6 +70,8 @@ public class MainActivity extends AppCompatActivity {
         textView_nombre = (TextView)findViewById(R.id.textView_nombre);
         volumen = (SeekBar)findViewById(R.id.seekBar_volumen);
         audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        letra = (EditText)findViewById(R.id.editText_letra);
+        layoutletra = (RelativeLayout)findViewById(R.id.relativeLayoutLetra);
 
         duracion.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -84,6 +97,12 @@ public class MainActivity extends AppCompatActivity {
         listacanciones.add(R.raw.romeo_santos__imitadora);
         listacanciones.add(R.raw.romeo_santos__you);
         listacanciones.add(R.raw.romeo_santos_ft_usher__promise);
+        array_letras.add(R.raw.grupo_extra__me_emborrachare_letra);
+        array_letras.add(R.raw.johnny_sky__quiereme_letra);
+        array_letras.add(R.raw.johnny_sky__solo_quiero_letra);
+        array_letras.add(R.raw.romeo_santos__imitadora_letra);
+        array_letras.add(R.raw.romeo_santos__you_letra);
+        array_letras.add(R.raw.romeo_santos_ft_usher__promise_letra);
         array.add("Grupo Extra - Me Emborrachare");
         array.add("Johnny Sky - Quiereme");
         array.add("Johnny Sky - Solo Quiero");
@@ -108,11 +127,29 @@ public class MainActivity extends AppCompatActivity {
             cancion.stop();
             pausaactiva = true;
         }
+        try {
+            letra(n);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         actual = n;
         textView_nombre.setText(String.valueOf(array.get(n)));
         cancion = MediaPlayer.create(this, (int)listacanciones.get(n));
         cancion.setAudioStreamType(AudioManager.STREAM_MUSIC);
         validar();
+    }
+
+    public void letra(int n) throws IOException {
+        String Total = "";
+        String linea;
+        InputStream is = this.getResources().openRawResource((int)array_letras.get(n));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        if(is!=null){
+            while((linea=reader.readLine())!=null){
+                Total = Total + linea;
+            }
+        }
+        letra.setText(Total);
     }
 
     public void playCycle(){
@@ -178,9 +215,12 @@ public class MainActivity extends AppCompatActivity {
     public void mostrarlista(View view){
         if(grid_lista.getVisibility() == View.VISIBLE){
             grid_lista.setVisibility(View.INVISIBLE);
+            layoutletra.setVisibility(View.VISIBLE);
         }
         else{
             grid_lista.setVisibility(View.VISIBLE);
+            layoutletra.setVisibility(View.INVISIBLE);
+
         }
     }
 
@@ -258,12 +298,12 @@ public class MainActivity extends AppCompatActivity {
             minimizeApp();
             return true;
         }
-        else if(keyCode == KeyEvent.KEYCODE_VOLUME_UP && event.getRepeatCount() == 0) {
+        else if(keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
 // Esto es lo que hace mi botón al pulsar volumen abajo
             volumenalto();
             return true;
         }
-        else if(keyCode == KeyEvent.KEYCODE_VOLUME_DOWN && event.getRepeatCount() == 0) {
+        else if(keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
 // Esto es lo que hace mi botón al pulsar volumen abajo
             volumenbajo();
             return true;
