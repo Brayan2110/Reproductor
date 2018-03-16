@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.opengl.EGLExt;
 import android.os.Build;
 import android.os.Handler;
 import android.support.annotation.RequiresApi;
@@ -17,6 +18,8 @@ import android.text.Layout;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -25,6 +28,7 @@ import android.widget.GridLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
+import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,12 +38,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
     int actual;
     Button pausa;
+    ScrollView scroll;
     MediaPlayer cancion = null;
     SeekBar duracion;
     SeekBar volumen;
@@ -72,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
         audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
         letra = (EditText)findViewById(R.id.editText_letra);
         layoutletra = (RelativeLayout)findViewById(R.id.relativeLayoutLetra);
-
+        scroll = (ScrollView)findViewById(R.id.scroll);
         duracion.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -91,27 +97,26 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-        listacanciones.add(R.raw.grupo_extra__me_emborrachare);
-        listacanciones.add(R.raw.johnny_sky__quiereme);
-        listacanciones.add(R.raw.johnny_sky__solo_quiero);
-        listacanciones.add(R.raw.romeo_santos__imitadora);
-        listacanciones.add(R.raw.romeo_santos__you);
-        listacanciones.add(R.raw.romeo_santos_ft_usher__promise);
-        array_letras.add(R.raw.grupo_extra__me_emborrachare_letra);
-        array_letras.add(R.raw.johnny_sky__quiereme_letra);
-        array_letras.add(R.raw.johnny_sky__solo_quiero_letra);
-        array_letras.add(R.raw.romeo_santos__imitadora_letra);
-        array_letras.add(R.raw.romeo_santos__you_letra);
-        array_letras.add(R.raw.romeo_santos_ft_usher__promise_letra);
-        array.add("Grupo Extra - Me Emborrachare");
-        array.add("Johnny Sky - Quiereme");
-        array.add("Johnny Sky - Solo Quiero");
-        array.add("Romeo Santos - Imitadora");
-        array.add("Romeo Santos - You");
-        array.add("Romeo Santos Ft. Usher - Promise");
+        //listacanciones.add(R.raw.grupo_extra__me_emborrachare);
+        //listacanciones.add(R.raw.johnny_sky__quiereme);
+        //listacanciones.add(R.raw.johnny_sky__solo_quiero);
+        //listacanciones.add(R.raw.romeo_santos__imitadora);
+        //listacanciones.add(R.raw.romeo_santos__you);
+        //listacanciones.add(R.raw.romeo_santos_ft_usher__promise);
+        //array_letras.add(R.raw.grupo_extra__me_emborrachare_letra);
+        //array_letras.add(R.raw.johnny_sky__quiereme_letra);
+        //array_letras.add(R.raw.johnny_sky__solo_quiero_letra);
+        //array_letras.add(R.raw.romeo_santos__imitadora_letra);
+        //array_letras.add(R.raw.romeo_santos__you_letra);
+        //array_letras.add(R.raw.romeo_santos_ft_usher__promise_letra);
+        //array.add("Grupo Extra - Me Emborrachare");
+        //array.add("Johnny Sky - Quiereme");
+        //array.add("Johnny Sky - Solo Quiero");
+        //array.add("Romeo Santos - Imitadora");
+        //array.add("Romeo Santos - You");
+        //array.add("Romeo Santos Ft. Usher - Promise");
         ArrayAdapter adaptador = new ArrayAdapter(this, android.R.layout.simple_list_item_1, array);
         lista.setAdapter(adaptador);
-
         lista.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -119,6 +124,22 @@ public class MainActivity extends AppCompatActivity {
                 escoger(position);
             }
         });
+        Field[] raw = R.raw.class.getFields();
+        R.raw rawResources = new R.raw();
+        for (Field f : raw) {
+            try {
+                if(!f.getName().endsWith("letra"))
+                {
+                    listacanciones.add(f.getInt(rawResources));
+                    array.add(f.getName().toUpperCase().replace("__"," - ").replace("_"," "));
+                }
+                else{
+                    array_letras.add(f.getInt(rawResources));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         volumen();
     }
 
@@ -150,10 +171,14 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         letra.setText(Total);
-    }
 
+    }
+    int x;
     public void playCycle(){
         duracion.setProgress(cancion.getCurrentPosition());
+        scroll.setScrollY(9999);
+        x = scroll.getScrollY();
+        scroll.setScrollY(10+(((cancion.getCurrentPosition()*100)/cancion.getDuration())*x)/100);
         if(cancion.isPlaying()){
             runnable = new Runnable() {
                 @Override
@@ -161,7 +186,7 @@ public class MainActivity extends AppCompatActivity {
                     playCycle();
                 }
             };
-            handler.postDelayed(runnable,1000);
+            handler.postDelayed(runnable,100);
         }
     }
 
@@ -271,6 +296,7 @@ public class MainActivity extends AppCompatActivity {
         if(cancion != null) {
             if (!pausaactiva) {
                 cancion.start();
+                playCycle();
             }
         }
     }
