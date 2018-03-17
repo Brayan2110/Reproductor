@@ -147,6 +147,10 @@ public class MainActivity extends AppCompatActivity {
         if(!pausaactiva){
             cancion.stop();
             pausaactiva = true;
+            if(cancion != null) {
+                handler.removeCallbacks(runnable);
+                cancion.release();
+            }
         }
         try {
             letra(n);
@@ -178,7 +182,7 @@ public class MainActivity extends AppCompatActivity {
         duracion.setProgress(cancion.getCurrentPosition());
         scroll.setScrollY(9999);
         x = scroll.getScrollY();
-        scroll.setScrollY(10+(((cancion.getCurrentPosition()*100)/cancion.getDuration())*x)/100);
+        scroll.setScrollY((((cancion.getCurrentPosition()*100)/cancion.getDuration())*x)/100);
         if(cancion.isPlaying()){
             runnable = new Runnable() {
                 @Override
